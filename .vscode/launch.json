@@ -1,0 +1,28 @@
+{
+  "configurations": [
+    {
+      "type": "lldb",
+      "request": "launch",
+      "sourceLanguages": [
+        "swift"
+      ],
+      "name": "Debug SwiftApp",
+      "program": "${workspaceFolder:SwiftApp}/.build/debug/SwiftApp",
+      "args": [],
+      "cwd": "${workspaceFolder:SwiftApp}",
+      "preLaunchTask": "swift: Build Debug SwiftApp"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "sourceLanguages": [
+        "swift"
+      ],
+      "name": "Release SwiftApp",
+      "program": "${workspaceFolder:SwiftApp}/.build/release/SwiftApp",
+      "args": [],
+      "cwd": "${workspaceFolder:SwiftApp}",
+      "preLaunchTask": "swift: Build Release SwiftApp"
+    }
+  ]
+}
