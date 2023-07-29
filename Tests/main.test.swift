@@ -12,6 +12,10 @@ class MainTests: XCTestCase {
   }
 }
 
+// TODO: create a static defaultContainer
+// TODO: property wrapper dependency injection (has optional container arg, uses default container by default)
+// TODO: swapping object in default containers for easy test setup
+
 // Allows for types as keys
 extension Dictionary where Key : LosslessStringConvertible
 {
