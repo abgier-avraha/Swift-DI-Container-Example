@@ -3,33 +3,14 @@ import XCTest
 
 class MainTests: XCTestCase {
   func testGeneratedString() {
-    let store = SomeStore().toAnyStore()
+    let container = DependencyInjectionContainer()
+    
+    container.inject(use: SomeStore().toAnyStore(), forType:  AnyStore<String>.self)
 
-    var singletonMap: [String: AnyObject] = [:]
-    singletonMap[AnyStore<String>.self] = SomeStore().toAnyStore()
+    let store = try! container.provide(forType:  AnyStore<String>.self)
 
     XCTAssertEqual(store.Get(), "<entity>")
   }
-}
-
-// TODO: create a static defaultContainer
-// TODO: property wrapper dependency injection (has optional container arg, uses default container by default)
-// TODO: swapping object in default containers for easy test setup
-
-// Allows for types as keys
-extension Dictionary where Key : LosslessStringConvertible
-{
-  subscript(index: Any.Type) -> Value?
-   {
-      get
-      {
-         return self[String(describing: index) as! Key]
-      }
-      set(newValue)
-      {
-         self[String(describing: index) as! Key] = newValue
-      }
-   }
 }
 
 protocol StoreProtocol 

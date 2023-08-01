@@ -7,9 +7,9 @@
         "swift"
       ],
       "name": "Debug SwiftApp",
-      "program": "${workspaceFolder:SwiftApp}/.build/debug/SwiftApp",
+      "program": "${workspaceFolder:Swift-DI-Container-Example}/.build/debug/SwiftApp",
       "args": [],
-      "cwd": "${workspaceFolder:SwiftApp}",
+      "cwd": "${workspaceFolder:Swift-DI-Container-Example}",
       "preLaunchTask": "swift: Build Debug SwiftApp"
     },
     {
@@ -19,9 +19,9 @@
         "swift"
       ],
       "name": "Release SwiftApp",
-      "program": "${workspaceFolder:SwiftApp}/.build/release/SwiftApp",
+      "program": "${workspaceFolder:Swift-DI-Container-Example}/.build/release/SwiftApp",
       "args": [],
-      "cwd": "${workspaceFolder:SwiftApp}",
+      "cwd": "${workspaceFolder:Swift-DI-Container-Example}",
       "preLaunchTask": "swift: Build Release SwiftApp"
     }
   ]
