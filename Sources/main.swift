@@ -8,9 +8,9 @@ public class DependencyInjectionContainer
 {
   private var singletonMap: [String: AnyObject] = [:]
 
-  func inject<T: AnyObject>(use: T, forType: T.Type)
+  func inject<T: AnyObject>(_ object: T)
   {
-    self.singletonMap[forType] = use
+    self.singletonMap[T.self] = object
   }
 
   func provide<T: AnyObject>(forType: T.Type) throws -> T
@@ -23,11 +23,23 @@ public class DependencyInjectionContainer
 
     return unwrapped as! T
   }
+
+  func provide<T: AnyObject>() throws -> T
+  {
+    let instance = self.singletonMap[T.self]
+    
+    guard let unwrapped = instance else {
+      throw DependencyInjectionError.SERVICE_NOT_INJECTED
+    }
+
+    return unwrapped as! T
+  }
 }
 
 @propertyWrapper
-public class Injected<T: AnyObject> {
+public class Provide<T: AnyObject> {
 
+  private var cachedObject: T?
   private var container: DependencyInjectionContainer
 
   public init()
@@ -41,8 +53,13 @@ public class Injected<T: AnyObject> {
 
   /// A computed accessor for the dependency. Will retain the initialized instance.
   public var wrappedValue: T {
+    guard let unwrapped = self.cachedObject else {
       let object = try! container.provide(forType: T.self)
+      self.cachedObject = object
       return object
+    }
+
+    return unwrapped
   }
 }
 
@@ -54,14 +71,14 @@ enum DependencyInjectionError: Error {
 extension Dictionary where Key : LosslessStringConvertible
 {
   subscript(index: Any.Type) -> Value?
-   {
-      get
-      {
-         return self[String(describing: index) as! Key]
-      }
-      set(newValue)
-      {
-         self[String(describing: index) as! Key] = newValue
-      }
-   }
+  {
+    get
+    {
+      return self[String(describing: index) as! Key]
+    }
+    set(newValue)
+    {
+      self[String(describing: index) as! Key] = newValue
+    }
+  }
 }

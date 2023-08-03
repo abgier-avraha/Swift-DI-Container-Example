@@ -4,14 +4,24 @@ import XCTest
 class MainTests: XCTestCase {
   func testInjectAndProvide() {
     let container = DependencyInjectionContainer()
-    container.inject(use: SomeStore().toAnyStore(), forType:  AnyStore<String>.self)
+    container.inject(SomeStore().toAnyStore())
 
-    let store = try! container.provide(forType:  AnyStore<String>.self)
+    let store: AnyStore<String> = try! container.provide()
     XCTAssertEqual(store.Get(), "<entity>")
   }
 
+  func testReplaceExistingInjectionAndProvide() {
+    let container = DependencyInjectionContainer()
+    container.inject(SomeStore().toAnyStore())
+
+    container.inject(AnotherStore().toAnyStore())
+
+    let store: AnyStore<String> = try! container.provide()
+    XCTAssertEqual(store.Get(), "<another-entity>")
+  }
+
   func propertyWrapperAutoInjectsFromShared() {
-    SharedContainer.container.inject(use: SomeStore().toAnyStore(), forType:  AnyStore<String>.self)
+    SharedContainer.container.inject(SomeStore().toAnyStore())
 
     let usesStore = UsesStore()
     XCTAssertEqual(usesStore.store.Get(), "<entity>")
@@ -20,7 +30,7 @@ class MainTests: XCTestCase {
 
 class UsesStore
 {
-  @Injected
+  @Provide
   var store: AnyStore<String>
 }
 
@@ -29,6 +39,7 @@ protocol StoreProtocol
   associatedtype Entity
   func Get() -> Entity?
 }
+
 extension StoreProtocol
 {
   func toAnyStore() -> AnyStore<Entity>
@@ -58,5 +69,14 @@ class SomeStore: StoreProtocol
 
   func Get() -> Entity? {
       return "<entity>"
+  }
+}
+
+class AnotherStore: StoreProtocol
+{
+  typealias Entity = String
+
+  func Get() -> Entity? {
+      return "<another-entity>"
   }
 }
