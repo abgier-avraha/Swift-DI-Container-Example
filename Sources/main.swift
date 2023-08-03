@@ -1,14 +1,10 @@
-// The Swift Programming Language
-// https://docs.swift.org/swift-book
-
 // TODO: init argument reflection and automatic injection?
-// TODO: property wrapper dependency injection (has optional container arg, uses default container by default)
-class SharedContainer
+public class SharedContainer
 {
   static let container = DependencyInjectionContainer()
 }
 
-class DependencyInjectionContainer
+public class DependencyInjectionContainer
 {
   private var singletonMap: [String: AnyObject] = [:]
 
@@ -26,6 +22,27 @@ class DependencyInjectionContainer
     }
 
     return unwrapped as! T
+  }
+}
+
+@propertyWrapper
+public class Injected<T: AnyObject> {
+
+  private var container: DependencyInjectionContainer
+
+  public init()
+  {
+    self.container = SharedContainer.container
+  }
+
+  public init(customContainer: DependencyInjectionContainer) {
+    self.container = customContainer
+  }
+
+  /// A computed accessor for the dependency. Will retain the initialized instance.
+  public var wrappedValue: T {
+      let object = try! container.provide(forType: T.self)
+      return object
   }
 }
 

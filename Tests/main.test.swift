@@ -2,15 +2,26 @@
 import XCTest
 
 class MainTests: XCTestCase {
-  func testGeneratedString() {
+  func testInjectAndProvide() {
     let container = DependencyInjectionContainer()
-    
     container.inject(use: SomeStore().toAnyStore(), forType:  AnyStore<String>.self)
 
     let store = try! container.provide(forType:  AnyStore<String>.self)
-
     XCTAssertEqual(store.Get(), "<entity>")
   }
+
+  func propertyWrapperAutoInjectsFromShared() {
+    SharedContainer.container.inject(use: SomeStore().toAnyStore(), forType:  AnyStore<String>.self)
+
+    let usesStore = UsesStore()
+    XCTAssertEqual(usesStore.store.Get(), "<entity>")
+  }
+}
+
+class UsesStore
+{
+  @Injected
+  var store: AnyStore<String>
 }
 
 protocol StoreProtocol 
