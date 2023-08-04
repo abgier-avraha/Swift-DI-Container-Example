@@ -1,65 +1,42 @@
 // TODO: init argument reflection and automatic injection?
-public class SharedContainer
-{
-  static let container = DependencyInjectionContainer()
-}
-
 public class DependencyInjectionContainer
 {
   private var singletonMap: [String: AnyObject] = [:]
+  private var transientMap: [String: () -> AnyObject] = [:]
 
-  func inject<T: AnyObject>(_ object: T)
+  func injectSingleton<T: AnyObject>(_ object: T)
   {
     self.singletonMap[T.self] = object
   }
 
+  func injectTransient<T: AnyObject>(_ objectBuilder: @escaping () -> T)
+  {
+    self.transientMap[T.self] = objectBuilder
+  }
+  
   func provide<T: AnyObject>(forType: T.Type) throws -> T
   {
+    // Check for singleton deps
     let instance = self.singletonMap[forType]
-    
-    guard let unwrapped = instance else {
-      throw DependencyInjectionError.SERVICE_NOT_INJECTED
+    guard let unwrappedInstance = instance else {
+      
+      // Check for transient deps
+      let instanceBuilder = self.transientMap[forType]
+      guard let unwrappedInstanceBuilder = instanceBuilder else {
+
+        // No dep found
+        throw DependencyInjectionError.SERVICE_NOT_INJECTED
+      }
+
+      return unwrappedInstanceBuilder() as! T
     }
 
-    return unwrapped as! T
+    return unwrappedInstance as! T
   }
 
   func provide<T: AnyObject>() throws -> T
   {
-    let instance = self.singletonMap[T.self]
-    
-    guard let unwrapped = instance else {
-      throw DependencyInjectionError.SERVICE_NOT_INJECTED
-    }
-
-    return unwrapped as! T
-  }
-}
-
-@propertyWrapper
-public class Provide<T: AnyObject> {
-
-  private var cachedObject: T?
-  private var container: DependencyInjectionContainer
-
-  public init()
-  {
-    self.container = SharedContainer.container
-  }
-
-  public init(customContainer: DependencyInjectionContainer) {
-    self.container = customContainer
-  }
-
-  /// A computed accessor for the dependency. Will retain the initialized instance.
-  public var wrappedValue: T {
-    guard let unwrapped = self.cachedObject else {
-      let object = try! container.provide(forType: T.self)
-      self.cachedObject = object
-      return object
-    }
-
-    return unwrapped
+    return try self.provide(forType: T.self)
   }
 }
 

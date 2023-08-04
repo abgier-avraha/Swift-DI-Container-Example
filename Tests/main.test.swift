@@ -4,27 +4,52 @@ import XCTest
 class MainTests: XCTestCase {
   func testInjectAndProvide() {
     let container = DependencyInjectionContainer()
-    container.inject(SomeStore().toAnyStore())
+    container.injectSingleton(SomeStore().toAnyStore())
 
     let store: AnyStore<String> = try! container.provide()
     XCTAssertEqual(store.Get(), "<entity>")
   }
 
-  func testReplaceExistingInjectionAndProvide() {
+  func testOverwritingInjectedClass() {
     let container = DependencyInjectionContainer()
-    container.inject(SomeStore().toAnyStore())
+    container.injectSingleton(SomeStore().toAnyStore())
 
-    container.inject(AnotherStore().toAnyStore())
+    container.injectSingleton(AnotherStore().toAnyStore())
 
     let store: AnyStore<String> = try! container.provide()
     XCTAssertEqual(store.Get(), "<another-entity>")
   }
 
-  func propertyWrapperAutoInjectsFromShared() {
-    SharedContainer.container.inject(SomeStore().toAnyStore())
+  func testSingletonEquality() {
+    let container = DependencyInjectionContainer()
+    container.injectSingleton(SomeStore().toAnyStore())
+
+    let storeA: AnyStore<String> = try! container.provide()
+    let storeB: AnyStore<String> = try! container.provide()
+    
+    XCTAssert(storeA === storeB)
+  }
+  
+
+  func testTransientInequality() {
+   let container = DependencyInjectionContainer()
+    container.injectTransient({ SomeStore().toAnyStore() })
+
+    let storeA: AnyStore<String> = try! container.provide()
+    let storeB: AnyStore<String> = try! container.provide()
+    
+    XCTAssert(storeA !== storeB)
+  }
+
+  func testPropertyWrapperAutoInjectsFromShared() {
+    SharedContainer.container.injectSingleton(SomeStore().toAnyStore())
+    SharedContainer.container.injectTransient({ Logger() })
 
     let usesStore = UsesStore()
+    usesStore.logger.Configure(forClass: self)
+
     XCTAssertEqual(usesStore.store.Get(), "<entity>")
+    XCTAssertEqual(usesStore.logger.Info(message: "<logging>"), "SwiftAppTests.MainTests::<logging>")
   }
 }
 
@@ -32,6 +57,9 @@ class UsesStore
 {
   @Provide
   var store: AnyStore<String>
+
+  @Provide
+  var logger: Logger
 }
 
 protocol StoreProtocol 
@@ -78,5 +106,19 @@ class AnotherStore: StoreProtocol
 
   func Get() -> Entity? {
       return "<another-entity>"
+  }
+}
+
+class Logger
+{
+  private var prefix = ""
+
+  func Configure(forClass: AnyObject)
+  {
+    self.prefix = String(describing: forClass)
+  }
+
+  func Info(message: String) -> String {
+    return "\(self.prefix)::\(message)"
   }
 }

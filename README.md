@@ -9,14 +9,16 @@ Please refer to `Tests/main.test.swift` for example code utilising Protocols and
 ### Using Default Shared Container
 
 ```swift
-  SharedContainer.container.inject(SomeStore().toAnyStore())
+  SharedContainer.container.injectSingleton(SomeStore().toAnyStore())
+  SharedContainer.container.injectTransient({ Logger() })
 ```
 
 ### Using Custom Container
 
 ```swift
   let container = DependencyInjectionContainer()
-  container.inject(SomeStore().toAnyStore())
+  container.injectSingleton(SomeStore().toAnyStore())
+  container.injectTransient({ SomeLogger().toAnyLogger() })
 ```
 
 ## Provide
