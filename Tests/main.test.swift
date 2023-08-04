@@ -10,6 +10,19 @@ class MainTests: XCTestCase {
     XCTAssertEqual(store.Get(), "<entity>")
   }
 
+  func testRemovingInjectedClass() {
+    let container = DependencyInjectionContainer()
+    container.injectSingleton(SomeStore().toAnyStore())
+    container.injectTransient({ Logger() })
+
+    container.remove(AnyStore<String>.self)
+    container.remove(Logger.self)
+
+    XCTAssertNil(try? container.provide(AnyStore<String>.self))
+    XCTAssertNil(try? container.provide(Logger.self))
+  }
+
+
   func testOverwritingInjectedClass() {
     let container = DependencyInjectionContainer()
     container.injectSingleton(SomeStore().toAnyStore())
@@ -32,11 +45,11 @@ class MainTests: XCTestCase {
   
 
   func testTransientInequality() {
-   let container = DependencyInjectionContainer()
-    container.injectTransient({ SomeStore().toAnyStore() })
+    let container = DependencyInjectionContainer()
+    container.injectTransient({ Logger() })
 
-    let storeA: AnyStore<String> = try! container.provide()
-    let storeB: AnyStore<String> = try! container.provide()
+    let storeA: Logger = try! container.provide()
+    let storeB: Logger = try! container.provide()
     
     XCTAssert(storeA !== storeB)
   }

@@ -18,7 +18,7 @@ public class Provide<T: AnyObject> {
   // This will prevent transient deps from being reconstructed accessed
   public var wrappedValue: T {
     guard let unwrappedCachedObject = self.cachedObject else {
-      let object = try! container.provide(forType: T.self)
+      let object = try! container.provide(T.self)
       self.cachedObject = object
       return object
     }

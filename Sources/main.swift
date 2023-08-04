@@ -14,7 +14,7 @@ public class DependencyInjectionContainer
     self.transientMap[T.self] = objectBuilder
   }
   
-  func provide<T: AnyObject>(forType: T.Type) throws -> T
+  func provide<T: AnyObject>(_ forType: T.Type) throws -> T
   {
     // Check for singleton deps
     let instance = self.singletonMap[forType]
@@ -36,7 +36,13 @@ public class DependencyInjectionContainer
 
   func provide<T: AnyObject>() throws -> T
   {
-    return try self.provide(forType: T.self)
+    return try self.provide(T.self)
+  }
+
+  func remove<T>(_ forType: T.Type)
+  {
+    self.singletonMap.removeValue(forKey: String(describing: forType))
+    self.transientMap.removeValue(forKey: String(describing: forType))
   }
 }
 
