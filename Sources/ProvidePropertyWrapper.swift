@@ -9,7 +9,7 @@ public class Provide<T: AnyObject> {
     self.container = SharedContainer.container
   }
 
-  public init(customContainer: DependencyInjectionContainer) {
+  public init(_ customContainer: DependencyInjectionContainer) {
     self.container = customContainer
   }
 

@@ -38,7 +38,7 @@ class UsesStore
 ```swift
 class UsesStore
 {
-  @Provide(customContainer: container)
+  @Provide(container)
   var store: AnyStore<String>
 }
 ```
@@ -52,5 +52,5 @@ class UsesStore
 Or
 
 ```swift
-  let store = try! container.provide(forType: AnyStore<String>.self)
+  let store = try! container.provide(AnyStore<String>.self)
 ```
