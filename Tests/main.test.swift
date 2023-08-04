@@ -22,8 +22,7 @@ class MainTests: XCTestCase {
     XCTAssertNil(try? container.provide(Logger.self))
   }
 
-
-  func testOverwritingInjectedClass() {
+  func testReplacingInjectedClass() {
     let container = DependencyInjectionContainer()
     container.injectSingleton(SomeStore().toAnyStore())
 
