@@ -19,6 +19,7 @@ public class DependencyInjectionContainer
   {
     self.transientMap[T.self] = objectBuilder
   }
+  
   func injectScoped<T: AnyObject>(_ objectBuilder: @escaping () -> T)
   {
     self.scopedMap[T.self] = objectBuilder

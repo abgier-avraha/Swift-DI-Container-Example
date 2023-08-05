@@ -91,6 +91,30 @@ class MainTests: XCTestCase {
     XCTAssertEqual(usesStore.store.Get(), "<entity>")
     XCTAssertEqual(usesStore.logger.Info(message: "<logging>"), "SwiftAppTests.MainTests::<logging>")
   }
+
+  func testPropertyWrapperWithMultipeLifecycles() {
+    MultipleLifecycles.container.injectSingleton(HasIdSingleton())
+    MultipleLifecycles.container.injectScoped({ HasIdScoped() })
+    MultipleLifecycles.container.injectTransient({ HasIdTransient() })
+
+    let multipleLifecyclesA = MultipleLifecycles()
+    let multipleLifecyclesB = MultipleLifecycles()
+
+    // Test singleton dep equality when providing from different instances
+    XCTAssertEqual(multipleLifecyclesA.singleton.id, multipleLifecyclesB.singleton.id)
+
+    // Test singleton dep equality when providing from different scopes
+    XCTAssertEqual(multipleLifecyclesA.singleton.id, multipleLifecyclesA.singletonWithDifferentScope.id)
+    
+    // Test scoped dep inequality when providing from different scopes
+    XCTAssertNotEqual(multipleLifecyclesA.scoped.id, multipleLifecyclesA.scopedWithDifferentScope.id)
+
+    // Test scoped dep equality when providing from same scope
+    XCTAssertEqual(multipleLifecyclesA.scoped.id, multipleLifecyclesA.scopedWithSameScope.id)
+
+    // Test transient dep inequality when providing from same scope
+    XCTAssertNotEqual(multipleLifecyclesA.transient.id, multipleLifecyclesA.transientWithSameScope.id)
+  }
 }
 
 class UsesStore
@@ -161,4 +185,52 @@ class Logger
   func Info(message: String) -> String {
     return "\(self.prefix)::\(message)"
   }
+}
+
+protocol HasUniqueIdProtocol
+{
+  var id: String { get set }    
+}
+
+class HasIdSingleton: HasUniqueIdProtocol
+{
+  var id = UUID().uuidString
+}
+
+class HasIdScoped: HasUniqueIdProtocol
+{
+  var id = UUID().uuidString
+}
+
+class HasIdTransient: HasUniqueIdProtocol
+{
+  var id = UUID().uuidString
+}
+
+class MultipleLifecycles
+{
+  public static let container = DependencyInjectionContainer()
+  private static let scopeA = MultipleLifecycles.container.createScope()
+  private static let scopeB = MultipleLifecycles.container.createScope()
+
+  @Provide(scopeA)
+  var singleton: HasIdSingleton
+
+  @Provide(scopeB)
+  var singletonWithDifferentScope: HasIdSingleton
+
+  @Provide(scopeA)
+  var scoped: HasIdScoped
+
+  @Provide(scopeA)
+  var scopedWithSameScope: HasIdScoped
+
+  @Provide(scopeB)
+  var scopedWithDifferentScope: HasIdScoped
+
+  @Provide(scopeA)
+  var transient: HasIdTransient
+
+  @Provide(scopeA)
+  var transientWithSameScope: HasIdTransient
 }

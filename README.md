@@ -2,6 +2,8 @@
 
 Very basic Swift DI container with no fancy reflection. Dotnet like API.
 
+What's the point of scoped dependencies when you have to use property wrappers to manually declare the scope you want? I have idea.
+
 Please refer to `Tests/main.test.swift` for example code utilising Protocols and Type Erasure.
 
 ## Inject
