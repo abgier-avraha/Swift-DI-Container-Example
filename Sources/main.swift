@@ -1,8 +1,14 @@
 // TODO: init argument reflection and automatic injection?
 public class DependencyInjectionContainer
 {
-  private var singletonMap: [String: AnyObject] = [:]
-  private var transientMap: [String: () -> AnyObject] = [:]
+  public var singletonMap: [String: AnyObject] = [:]
+  public var transientMap: [String: () -> AnyObject] = [:]
+  public var scopedMap: [String: () -> AnyObject] = [:]
+
+  func createScope() -> ServiceScope
+  {
+    return ServiceScope(self)
+  }
 
   func injectSingleton<T: AnyObject>(_ object: T)
   {
@@ -13,36 +19,16 @@ public class DependencyInjectionContainer
   {
     self.transientMap[T.self] = objectBuilder
   }
-  
-  func provide<T: AnyObject>(_ forType: T.Type) throws -> T
+  func injectScoped<T: AnyObject>(_ objectBuilder: @escaping () -> T)
   {
-    // Check for singleton deps
-    let instance = self.singletonMap[forType]
-    guard let unwrappedInstance = instance else {
-      
-      // Check for transient deps
-      let instanceBuilder = self.transientMap[forType]
-      guard let unwrappedInstanceBuilder = instanceBuilder else {
-
-        // No dep found
-        throw DependencyInjectionError.SERVICE_NOT_INJECTED
-      }
-
-      return unwrappedInstanceBuilder() as! T
-    }
-
-    return unwrappedInstance as! T
-  }
-
-  func provide<T: AnyObject>() throws -> T
-  {
-    return try self.provide(T.self)
+    self.scopedMap[T.self] = objectBuilder
   }
 
   func remove<T>(_ forType: T.Type)
   {
     self.singletonMap.removeValue(forKey: String(describing: forType))
     self.transientMap.removeValue(forKey: String(describing: forType))
+    self.scopedMap.removeValue(forKey: String(describing: forType))
   }
 }
 

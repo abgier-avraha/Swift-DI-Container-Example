@@ -6,7 +6,8 @@ class MainTests: XCTestCase {
     let container = DependencyInjectionContainer()
     container.injectSingleton(SomeStore().toAnyStore())
 
-    let store: AnyStore<String> = try! container.provide()
+    let scope = container.createScope()
+    let store: AnyStore<String> = try! scope.provide()
     XCTAssertEqual(store.Get(), "<entity>")
   }
 
@@ -18,8 +19,9 @@ class MainTests: XCTestCase {
     container.remove(AnyStore<String>.self)
     container.remove(Logger.self)
 
-    XCTAssertNil(try? container.provide(AnyStore<String>.self))
-    XCTAssertNil(try? container.provide(Logger.self))
+    let scope = container.createScope()
+    XCTAssertNil(try? scope.provide(AnyStore<String>.self))
+    XCTAssertNil(try? scope.provide(Logger.self))
   }
 
   func testReplacingInjectedClass() {
@@ -28,7 +30,8 @@ class MainTests: XCTestCase {
 
     container.injectSingleton(AnotherStore().toAnyStore())
 
-    let store: AnyStore<String> = try! container.provide()
+    let scope = container.createScope()
+    let store: AnyStore<String> = try! scope.provide()
     XCTAssertEqual(store.Get(), "<another-entity>")
   }
 
@@ -36,26 +39,51 @@ class MainTests: XCTestCase {
     let container = DependencyInjectionContainer()
     container.injectSingleton(SomeStore().toAnyStore())
 
-    let storeA: AnyStore<String> = try! container.provide()
-    let storeB: AnyStore<String> = try! container.provide()
+    let scope = container.createScope()
+    let storeA: AnyStore<String> = try! scope.provide()
+    let storeB: AnyStore<String> = try! scope.provide()
     
     XCTAssert(storeA === storeB)
   }
-  
 
   func testTransientInequality() {
     let container = DependencyInjectionContainer()
     container.injectTransient({ Logger() })
 
-    let storeA: Logger = try! container.provide()
-    let storeB: Logger = try! container.provide()
+    let scope = container.createScope()
+    let storeA: Logger = try! scope.provide()
+    let storeB: Logger = try! scope.provide()
     
     XCTAssert(storeA !== storeB)
   }
 
+  func testScopedInequality() {
+    let container = DependencyInjectionContainer()
+    container.injectScoped({ Logger() })
+
+    let scopeA = container.createScope()
+    let storeA: Logger = try! scopeA.provide()
+
+    let scopeB = container.createScope()
+    let storeB: Logger = try! scopeB.provide()
+    
+    XCTAssert(storeA !== storeB)
+  }
+
+  func testScopedCacheEquality() {
+    let container = DependencyInjectionContainer()
+    container.injectScoped({ Logger() })
+
+    let scopeA = container.createScope()
+    let storeA: Logger = try! scopeA.provide()
+    let storeB: Logger = try! scopeA.provide()
+    
+    XCTAssert(storeA === storeB)
+  }
+
   func testPropertyWrapperAutoInjectsFromShared() {
-    SharedContainer.container.injectSingleton(SomeStore().toAnyStore())
-    SharedContainer.container.injectTransient({ Logger() })
+    DefaultScope.scope.container.injectSingleton(SomeStore().toAnyStore())
+    DefaultScope.scope.container.injectTransient({ Logger() })
 
     let usesStore = UsesStore()
     usesStore.logger.Configure(forClass: self)

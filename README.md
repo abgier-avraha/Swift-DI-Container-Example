@@ -1,16 +1,17 @@
 # Swift DI Container Example
 
-Very basic Swift DI container with no fancy reflection.
+Very basic Swift DI container with no fancy reflection. Dotnet like API.
 
 Please refer to `Tests/main.test.swift` for example code utilising Protocols and Type Erasure.
 
 ## Inject
 
-### Using Default Shared Container
+### Using Default Scope
 
 ```swift
-  SharedContainer.container.injectSingleton(SomeStore().toAnyStore())
-  SharedContainer.container.injectTransient({ Logger() })
+  DefaultScope.scope.container.injectSingleton(SomeStore().toAnyStore())
+  DefaultScope.scope.container.({ SomeLogger().toAnyLogger() })
+  DefaultScope.scope.container.injectTransient({ Logger() })
 ```
 
 ### Using Custom Container
@@ -19,11 +20,12 @@ Please refer to `Tests/main.test.swift` for example code utilising Protocols and
   let container = DependencyInjectionContainer()
   container.injectSingleton(SomeStore().toAnyStore())
   container.injectTransient({ SomeLogger().toAnyLogger() })
+  container.injectScoped({ SomeLogger().toAnyLogger() })
 ```
 
 ## Provide
 
-### Through Property Wrapper with Default Shared Container
+### Through Property Wrapper with Default Scope
 
 ```swift
 class UsesStore
@@ -33,12 +35,12 @@ class UsesStore
 }
 ```
 
-### Through Property Wrapper with Custom Container
+### Through Property Wrapper with Custom Scope
 
 ```swift
 class UsesStore
 {
-  @Provide(container)
+  @Provide(scope)
   var store: AnyStore<String>
 }
 ```
@@ -46,11 +48,13 @@ class UsesStore
 ### Through Provide Method
 
 ```swift
-  let store: AnyStore<String> = try! container.provide()
+  let scope = container.createScope()
+  let store: AnyStore<String> = try! scope.provide()
 ```
 
 Or
 
 ```swift
-  let store = try! container.provide(AnyStore<String>.self)
+  let scope = container.createScope()
+  let store = try! scope.provide(AnyStore<String>.self)
 ```
