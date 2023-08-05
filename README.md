@@ -10,8 +10,8 @@ Please refer to `Tests/main.test.swift` for example code utilising Protocols and
 
 ```swift
   DefaultScope.scope.container.injectSingleton(SomeStore().toAnyStore())
-  DefaultScope.scope.container.({ SomeLogger().toAnyLogger() })
   DefaultScope.scope.container.injectTransient({ Logger() })
+  DefaultScope.scope.container.injectScoped({ AnotherService().toAnyService() })
 ```
 
 ### Using Custom Container
@@ -19,8 +19,8 @@ Please refer to `Tests/main.test.swift` for example code utilising Protocols and
 ```swift
   let container = DependencyInjectionContainer()
   container.injectSingleton(SomeStore().toAnyStore())
-  container.injectTransient({ SomeLogger().toAnyLogger() })
-  container.injectScoped({ SomeLogger().toAnyLogger() })
+  container.injectTransient({ Logger() })
+  container.injectScoped({ AnotherService().toAnyService() })
 ```
 
 ## Provide
