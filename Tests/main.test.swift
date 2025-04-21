@@ -8,7 +8,7 @@ class MainTests: XCTestCase {
 
     let scope = container.createScope()
     let store: AnyStore<String> = try! scope.provide()
-    XCTAssertEqual(store.Get(), "<entity>")
+    XCTAssertEqual(store.get(), "<entity>")
   }
 
   func testRemovingInjectedClass() {
@@ -32,7 +32,7 @@ class MainTests: XCTestCase {
 
     let scope = container.createScope()
     let store: AnyStore<String> = try! scope.provide()
-    XCTAssertEqual(store.Get(), "<another-entity>")
+    XCTAssertEqual(store.get(), "<another-entity>")
   }
 
   func testSingletonEquality() {
@@ -85,11 +85,11 @@ class MainTests: XCTestCase {
     DefaultScope.scope.container.injectSingleton(SomeStore().toAnyStore())
     DefaultScope.scope.container.injectTransient({ Logger() })
 
-    let usesStore = UsesStore()
-    usesStore.logger.Configure(forClass: self)
+    let usersStore: UsersStore = UsersStore()
+    usersStore.logger.configure(forClass: self)
 
-    XCTAssertEqual(usesStore.store.Get(), "<entity>")
-    XCTAssertEqual(usesStore.logger.Info(message: "<logging>"), "SwiftAppTests.MainTests::<logging>")
+    XCTAssertEqual(usersStore.store.get(), "<entity>")
+    XCTAssertEqual(usersStore.logger.info(message: "<logging>"), "SwiftAppTests.MainTests::<logging>")
   }
 
   func testPropertyWrapperWithMultipeLifecycles() {
@@ -117,7 +117,7 @@ class MainTests: XCTestCase {
   }
 }
 
-class UsesStore
+class UsersStore
 {
   @Provide
   var store: AnyStore<String>
@@ -129,7 +129,7 @@ class UsesStore
 protocol StoreProtocol 
 {
   associatedtype Entity
-  func Get() -> Entity?
+  func get() -> Entity?
 }
 
 extension StoreProtocol
@@ -143,15 +143,15 @@ extension StoreProtocol
 class AnyStore<T>: StoreProtocol
 {
   typealias Entity = T
-  private let GetClosure: () -> Entity?
+  private let getClosure: () -> Entity?
 
   init<StoreProtocolType: StoreProtocol>(with: StoreProtocolType) where StoreProtocolType.Entity == Entity 
   {
-    self.GetClosure = with.Get
+    self.getClosure = with.get
   }
 
-  func Get() -> Entity? {
-    return self.GetClosure()
+  func get() -> Entity? {
+    return self.getClosure()
   }
 }
 
@@ -159,7 +159,7 @@ class SomeStore: StoreProtocol
 {
   typealias Entity = String
 
-  func Get() -> Entity? {
+  func get() -> Entity? {
       return "<entity>"
   }
 }
@@ -168,7 +168,7 @@ class AnotherStore: StoreProtocol
 {
   typealias Entity = String
 
-  func Get() -> Entity? {
+  func get() -> Entity? {
       return "<another-entity>"
   }
 }
@@ -177,12 +177,12 @@ class Logger
 {
   private var prefix = ""
 
-  func Configure(forClass: AnyObject)
+  func configure(forClass: AnyObject)
   {
     self.prefix = String(describing: forClass)
   }
 
-  func Info(message: String) -> String {
+  func info(message: String) -> String {
     return "\(self.prefix)::\(message)"
   }
 }
@@ -234,3 +234,4 @@ class MultipleLifecycles
   @Provide(scopeA)
   var transientWithSameScope: HasIdTransient
 }
+

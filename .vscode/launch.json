@@ -1,27 +1,27 @@
 {
   "configurations": [
     {
-      "type": "lldb",
+      "type": "swift",
       "request": "launch",
       "sourceLanguages": [
         "swift"
       ],
       "name": "Debug SwiftApp",
-      "program": "${workspaceFolder:Swift-DI-Container-Example}/.build/debug/SwiftApp",
+      "program": "${workspaceFolder:SwiftApp}/.build/debug/SwiftApp",
       "args": [],
-      "cwd": "${workspaceFolder:Swift-DI-Container-Example}",
+      "cwd": "${workspaceFolder:SwiftApp}",
       "preLaunchTask": "swift: Build Debug SwiftApp"
     },
     {
-      "type": "lldb",
+      "type": "swift",
       "request": "launch",
       "sourceLanguages": [
         "swift"
       ],
       "name": "Release SwiftApp",
-      "program": "${workspaceFolder:Swift-DI-Container-Example}/.build/release/SwiftApp",
+      "program": "${workspaceFolder:SwiftApp}/.build/release/SwiftApp",
       "args": [],
-      "cwd": "${workspaceFolder:Swift-DI-Container-Example}",
+      "cwd": "${workspaceFolder:SwiftApp}",
       "preLaunchTask": "swift: Build Release SwiftApp"
     }
   ]
