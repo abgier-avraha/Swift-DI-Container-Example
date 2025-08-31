@@ -12,8 +12,19 @@ public class Provide<T: AnyObject> {
     }
   }
 
+  // Override method for passing in a static scope
   public init(_ scope: ServiceScope) {
     self.scope = scope
+
+    /*
+      Temporarily set this ServiceScope as the current thread-local scope.
+      The previous scope is saved and restored after this function completes.
+      This allows any nested @Provide wrappers to resolve their dependencies
+      from the same scope.
+    */
+    let previous = ScopeContext.current
+    ScopeContext.current = scope
+    defer { ScopeContext.current = previous }
   }
 
   /// A computed accessor for the dependency.

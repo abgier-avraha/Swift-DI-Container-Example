@@ -27,7 +27,7 @@ class UsesStore
 }
 ```
 
-### Through Property Wrapper with Custom Scope
+### Through Property Wrapper with a Static Scope
 
 ```swift
 class UsesStore
@@ -49,4 +49,23 @@ Or
 ```swift
   let scope = container.createScope()
   let store = try! scope.provide(AnyStore<String>.self)
+```
+
+Tip: You can declare a global default scope if a static scope will suffice.
+
+```swift
+// Declare default scope
+public class DefaultScope
+{
+  static let scope = DependencyInjectionContainer().createScope()
+}
+
+...
+
+// Then inject
+DefaultScope.scope.container.injectSingleton(SomeDependency())
+
+// Then provide
+@Provide(DefaultScope.scope)
+var dependency: SomeDependency
 ```
