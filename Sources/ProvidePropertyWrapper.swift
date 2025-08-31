@@ -4,9 +4,12 @@ public class Provide<T: AnyObject> {
   private var cachedObject: T?
   private var scope: ServiceScope
 
-  public init()
-  {
-    self.scope = DefaultScope.scope
+  public init() {
+    if let current = ScopeContext.current {
+      self.scope = current
+    } else {
+      fatalError("@Provide used outside of a scope")
+    }
   }
 
   public init(_ scope: ServiceScope) {

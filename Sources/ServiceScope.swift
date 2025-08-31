@@ -1,53 +1,50 @@
-public class ServiceScope
-{
+public class ServiceScope {
   public var container: DependencyInjectionContainer
   private var scopedCache: [String: AnyObject] = [:]
 
-  init(_ container: DependencyInjectionContainer)
-  {
+  init(_ container: DependencyInjectionContainer) {
     self.container = container
   }
 
-  func provide<T: AnyObject>(_ forType: T.Type) throws -> T
-  {
-    // Check for singleton deps
-    let instance = self.container.singletonMap[forType]
+  func provide<T: AnyObject>(_ forType: T.Type) throws -> T {
+    /*
+      Temporarily set this ServiceScope as the current thread-local scope.
+      The previous scope is saved and restored after this function completes.
+      This allows @Provide to resolve dependencies from the same scope as the root provide() call.
+    */
+    let previous = ScopeContext.current
+    ScopeContext.current = self
+    defer { ScopeContext.current = previous }
 
-    guard let unwrappedInstance = instance else {
-      
-      // Check for transient deps
-      let instanceBuilder = self.container.transientMap[forType]
-      guard let unwrappedInstanceBuilder = instanceBuilder else {
+    let key = String(describing: forType)
 
-        // Check for scoped cache
-        let instance = self.scopedCache[forType]
-        guard let unwrappedInstance = instance else {
-        
-          // Check for scoped deps
-          let instanceBuilder = self.container.scopedMap[forType]
-          guard let unwrappedInstanceBuilder = instanceBuilder else {
-
-            // No dep found
-            throw DependencyInjectionError.SERVICE_NOT_INJECTED
-          }
-
-          // Cache the scoped dep
-          let scopedDep = unwrappedInstanceBuilder() as! T
-          self.scopedCache[forType] = scopedDep
-          return scopedDep
-        }
-
-        return unwrappedInstance as! T
-      }
-
-      return unwrappedInstanceBuilder() as! T
+    // 1. Singleton deps
+    if let instance = container.singletonMap[key] {
+      return instance as! T
     }
 
-    return unwrappedInstance as! T
+    // 2. Scoped cache
+    if let instance = scopedCache[key] {
+      return instance as! T
+    }
+
+    // 3. Scoped deps (build & cache)
+    if let builder = container.scopedMap[key] {
+      let instance = builder() as! T
+      scopedCache[key] = instance
+      return instance
+    }
+
+    // 4. Transient deps (always new)
+    if let builder = container.transientMap[key] {
+      return builder() as! T
+    }
+
+    // 5. Nothing found
+    throw DependencyInjectionError.SERVICE_NOT_INJECTED
   }
 
-  func provide<T: AnyObject>() throws -> T
-  {
-    return try self.provide(T.self)
+  func provide<T: AnyObject>() throws -> T {
+    return try provide(T.self)
   }
 }

@@ -1,5 +1,6 @@
-@testable import SwiftApp
 import XCTest
+
+@testable import SwiftApp
 
 class MainTests: XCTestCase {
   func testInjectAndProvide() {
@@ -42,7 +43,7 @@ class MainTests: XCTestCase {
     let scope = container.createScope()
     let storeA: AnyStore<String> = try! scope.provide()
     let storeB: AnyStore<String> = try! scope.provide()
-    
+
     XCTAssert(storeA === storeB)
   }
 
@@ -53,7 +54,7 @@ class MainTests: XCTestCase {
     let scope = container.createScope()
     let storeA: Logger = try! scope.provide()
     let storeB: Logger = try! scope.provide()
-    
+
     XCTAssert(storeA !== storeB)
   }
 
@@ -66,7 +67,7 @@ class MainTests: XCTestCase {
 
     let scopeB = container.createScope()
     let storeB: Logger = try! scopeB.provide()
-    
+
     XCTAssert(storeA !== storeB)
   }
 
@@ -77,48 +78,92 @@ class MainTests: XCTestCase {
     let scopeA = container.createScope()
     let storeA: Logger = try! scopeA.provide()
     let storeB: Logger = try! scopeA.provide()
-    
+
     XCTAssert(storeA === storeB)
   }
 
-  func testPropertyWrapperAutoInjectsFromShared() {
-    DefaultScope.scope.container.injectSingleton(SomeStore().toAnyStore())
-    DefaultScope.scope.container.injectTransient({ Logger() })
+  func testMultipleLifecycles() {
+    let container = DependencyInjectionContainer()
 
-    let usersStore: UsersStore = UsersStore()
-    usersStore.logger.configure(forClass: self)
+    container.injectSingleton(HasIdSingleton())
+    container.injectScoped({ HasIdScoped() })
+    container.injectTransient({ HasIdTransient() })
 
-    XCTAssertEqual(usersStore.store.get(), "<entity>")
-    XCTAssertEqual(usersStore.logger.info(message: "<logging>"), "SwiftAppTests.MainTests::<logging>")
-  }
-
-  func testPropertyWrapperWithMultipeLifecycles() {
-    MultipleLifecycles.container.injectSingleton(HasIdSingleton())
-    MultipleLifecycles.container.injectScoped({ HasIdScoped() })
-    MultipleLifecycles.container.injectTransient({ HasIdTransient() })
-
-    let multipleLifecyclesA = MultipleLifecycles()
-    let multipleLifecyclesB = MultipleLifecycles()
-
-    // Test singleton dep equality when providing from different instances
-    XCTAssertEqual(multipleLifecyclesA.singleton.id, multipleLifecyclesB.singleton.id)
+    let scopeA: ServiceScope = container.createScope()
+    let scopeB: ServiceScope = container.createScope()
 
     // Test singleton dep equality when providing from different scopes
-    XCTAssertEqual(multipleLifecyclesA.singleton.id, multipleLifecyclesA.singletonWithDifferentScope.id)
-    
+    XCTAssertEqual(
+      try! scopeA.provide(HasIdSingleton.self).id, try! scopeB.provide(HasIdSingleton.self).id)
+
     // Test scoped dep inequality when providing from different scopes
-    XCTAssertNotEqual(multipleLifecyclesA.scoped.id, multipleLifecyclesA.scopedWithDifferentScope.id)
+    XCTAssertNotEqual(
+      try! scopeA.provide(HasIdScoped.self).id, try! scopeB.provide(HasIdScoped.self).id)
 
     // Test scoped dep equality when providing from same scope
-    XCTAssertEqual(multipleLifecyclesA.scoped.id, multipleLifecyclesA.scopedWithSameScope.id)
+    XCTAssertEqual(
+      try! scopeA.provide(HasIdScoped.self).id, try! scopeA.provide(HasIdScoped.self).id)
 
     // Test transient dep inequality when providing from same scope
-    XCTAssertNotEqual(multipleLifecyclesA.transient.id, multipleLifecyclesA.transientWithSameScope.id)
+    XCTAssertNotEqual(
+      try! scopeA.provide(HasIdTransient.self).id, try! scopeA.provide(HasIdTransient.self).id)
+  }
+
+  func testPropertyWrapperWithMultipleLifecycles() {
+    let container = DependencyInjectionContainer()
+
+    container.injectSingleton(HasIdSingleton())
+    container.injectScoped({ HasIdScoped() })
+    container.injectTransient({ HasIdTransient() })
+    container.injectTransient {
+      MultipleLifecycles()
+    }
+
+    let scopeA: ServiceScope = container.createScope()
+    let scopeB: ServiceScope = container.createScope()
+
+    let scopeAInstance: MultipleLifecycles = try! scopeA.provide()
+    let duplicateScopeAInstance: MultipleLifecycles = try! scopeA.provide()
+    let scopeBInstance: MultipleLifecycles = try! scopeB.provide()
+
+    // Test singleton dep equality when providing from different scopes
+    XCTAssertEqual(
+      scopeAInstance.singleton.id, scopeBInstance.singleton.id)
+
+    // Test scoped dep inequality when providing from different scopes
+    XCTAssertNotEqual(
+      scopeAInstance.scoped.id, scopeBInstance.scoped.id)
+
+    // Test scoped dep equality when providing from same scope
+    XCTAssertEqual(
+      scopeAInstance.scoped.id, duplicateScopeAInstance.scoped.id)
+
+    // Test transient dep inequality when providing from same scope
+    XCTAssertNotEqual(
+      scopeAInstance.transient.id, duplicateScopeAInstance.transient.id)
+  }
+
+  func testNestedPropertyWrappers() {
+    let container = DependencyInjectionContainer()
+
+    container.injectTransient({ SomeStore().toAnyStore() })
+    container.injectTransient({ Logger() })
+    container.injectTransient({ UsersStore() })
+    container.injectTransient({ NestedTest() })
+
+    let scope: ServiceScope = container.createScope()
+
+    let nestedTest: NestedTest = try! scope.provide()
+
+    // Test singleton dep equality when providing from different scopes
+    XCTAssertNotNil(nestedTest)
+    XCTAssertNotNil(nestedTest.userStore)
+    XCTAssertNotNil(nestedTest.userStore.logger)
+    XCTAssertNotNil(nestedTest.userStore.store)
   }
 }
 
-class UsersStore
-{
+class UsersStore {
   @Provide
   var store: AnyStore<String>
 
@@ -126,27 +171,23 @@ class UsersStore
   var logger: Logger
 }
 
-protocol StoreProtocol 
-{
+protocol StoreProtocol {
   associatedtype Entity
   func get() -> Entity?
 }
 
-extension StoreProtocol
-{
-  func toAnyStore() -> AnyStore<Entity>
-  {
+extension StoreProtocol {
+  func toAnyStore() -> AnyStore<Entity> {
     return AnyStore<Entity>(with: self)
   }
 }
 
-class AnyStore<T>: StoreProtocol
-{
+class AnyStore<T>: StoreProtocol {
   typealias Entity = T
   private let getClosure: () -> Entity?
 
-  init<StoreProtocolType: StoreProtocol>(with: StoreProtocolType) where StoreProtocolType.Entity == Entity 
-  {
+  init<StoreProtocolType: StoreProtocol>(with: StoreProtocolType)
+  where StoreProtocolType.Entity == Entity {
     self.getClosure = with.get
   }
 
@@ -155,30 +196,26 @@ class AnyStore<T>: StoreProtocol
   }
 }
 
-class SomeStore: StoreProtocol
-{
+class SomeStore: StoreProtocol {
   typealias Entity = String
 
   func get() -> Entity? {
-      return "<entity>"
+    return "<entity>"
   }
 }
 
-class AnotherStore: StoreProtocol
-{
+class AnotherStore: StoreProtocol {
   typealias Entity = String
 
   func get() -> Entity? {
-      return "<another-entity>"
+    return "<another-entity>"
   }
 }
 
-class Logger
-{
+class Logger {
   private var prefix = ""
 
-  func configure(forClass: AnyObject)
-  {
+  func configure(forClass: AnyObject) {
     self.prefix = String(describing: forClass)
   }
 
@@ -187,51 +224,34 @@ class Logger
   }
 }
 
-protocol HasUniqueIdProtocol
-{
-  var id: String { get set }    
+protocol HasUniqueIdProtocol {
+  var id: String { get set }
 }
 
-class HasIdSingleton: HasUniqueIdProtocol
-{
+class HasIdSingleton: HasUniqueIdProtocol {
   var id = UUID().uuidString
 }
 
-class HasIdScoped: HasUniqueIdProtocol
-{
+class HasIdScoped: HasUniqueIdProtocol {
   var id = UUID().uuidString
 }
 
-class HasIdTransient: HasUniqueIdProtocol
-{
+class HasIdTransient: HasUniqueIdProtocol {
   var id = UUID().uuidString
 }
 
-class MultipleLifecycles
-{
-  public static let container = DependencyInjectionContainer()
-  private static let scopeA = MultipleLifecycles.container.createScope()
-  private static let scopeB = MultipleLifecycles.container.createScope()
-
-  @Provide(scopeA)
+class MultipleLifecycles {
+  @Provide
   var singleton: HasIdSingleton
 
-  @Provide(scopeB)
-  var singletonWithDifferentScope: HasIdSingleton
-
-  @Provide(scopeA)
+  @Provide
   var scoped: HasIdScoped
 
-  @Provide(scopeA)
-  var scopedWithSameScope: HasIdScoped
-
-  @Provide(scopeB)
-  var scopedWithDifferentScope: HasIdScoped
-
-  @Provide(scopeA)
+  @Provide
   var transient: HasIdTransient
-
-  @Provide(scopeA)
-  var transientWithSameScope: HasIdTransient
 }
 
+class NestedTest {
+  @Provide
+  var userStore: UsersStore
+}

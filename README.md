@@ -8,16 +8,6 @@ Please refer to `Tests/main.test.swift` for example code utilising Protocols and
 
 ## Inject
 
-### Using Default Scope
-
-```swift
-  DefaultScope.scope.container.injectSingleton(SomeStore().toAnyStore())
-  DefaultScope.scope.container.injectTransient({ Logger() })
-  DefaultScope.scope.container.injectScoped({ AnotherService().toAnyService() })
-```
-
-### Using Custom Container
-
 ```swift
   let container = DependencyInjectionContainer()
   container.injectSingleton(SomeStore().toAnyStore())
@@ -27,7 +17,7 @@ Please refer to `Tests/main.test.swift` for example code utilising Protocols and
 
 ## Provide
 
-### Through Property Wrapper with Default Scope
+### Through Property Wrapper with Thread Local Scope
 
 ```swift
 class UsesStore
